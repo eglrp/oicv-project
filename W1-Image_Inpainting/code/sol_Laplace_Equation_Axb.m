@@ -6,8 +6,8 @@ function [u] = sol_Laplace_Equation_Axb(f, dom2Inp, param)
 %We add the ghost boundaries (for the boundary conditions)
 f_ext = zeros(ni+2, nj+2);
 f_ext(2:end-1, 2:end-1) = f;
-dom2Inp_ext =zeros(ni+2, nj+2);
-dom2Inp_ext (2:end-1, 2:end-1) = dom2Inp;
+dom2Inp_ext = zeros(ni+2, nj+2);
+dom2Inp_ext(2:end-1, 2:end-1) = dom2Inp;
 
 %Store memory for the A matrix and the b vector    
 nPixels =(ni+2)*(nj+2); %Number of pixels
@@ -18,6 +18,9 @@ nPixels =(ni+2)*(nj+2); %Number of pixels
 %idx_Aj: Vector for the nonZero j index of matrix A
 %a_ij: Vector for the value at position ij of matrix A
 
+% h parameters
+h_i_laplace = param.hi ^ 2;
+h_j_laplace = param.hj ^ 2;
 
 b = zeros(nPixels,1);
 
@@ -131,27 +134,27 @@ for j=2:nj+1
             %TO COMPLETE 5
             idx_Ai(idx) = p; 
             idx_Aj(idx) = p; 
-            a_ij(idx) = -4;
+            a_ij(idx) = -2*(h_i_laplace + h_j_laplace);
             idx=idx+1;
 
             idx_Ai(idx) = p;
             idx_Aj(idx) = p-1;
-            a_ij(idx) = 1;   
+            a_ij(idx) = h_j_laplace;   
             idx=idx+1;
             
             idx_Ai(idx) = p;
             idx_Aj(idx) = p+1;
-            a_ij(idx) = 1;   
+            a_ij(idx) = h_j_laplace;   
             idx=idx+1;
             
             idx_Ai(idx) = p;
             idx_Aj(idx) = p-(ni+1);
-            a_ij(idx) = 1;   
+            a_ij(idx) = h_i_laplace;   
             idx=idx+1;
             
             idx_Ai(idx) = p;
             idx_Aj(idx) = p+(ni+1);
-            a_ij(idx) = 1;   
+            a_ij(idx) = h_i_laplace;   
             idx=idx+1;
             
 
@@ -171,17 +174,17 @@ for j=2:nj+1
         end       
     end
 end
-    %A is a sparse matrix, so for memory requirements we create a sparse
-    %matrix
-    %TO COMPLETE 7
+    % A is a sparse matrix, so for memory requirements we create a sparse
+    % matrix
+    % TO COMPLETE 7
     A=sparse(idx_Ai, idx_Aj, a_ij, nPixels, nPixels); %??? and ???? is the size of matrix A
     
-    %Solve the sistem of equations
+    % Solve the sistem of equations
     x=mldivide(A,b);
     
-    %From vector to matrix
+    % From vector to matrix
     u_ext= reshape(x, ni+2, nj+2);
     
-    %Eliminate the ghost boundaries
+    % Eliminate the ghost boundaries
     u=full(u_ext(2:end-1, 2:end-1));
     

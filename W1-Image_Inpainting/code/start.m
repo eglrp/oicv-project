@@ -12,7 +12,7 @@ clearvars;
 %  image5_toRestore.jpg
 
 %name= 'image5';
-name= 'image1';
+name= 'image3';
 
 I = double(imread([ name '_toRestore.jpg']));
 %I=I(1:10,1:10);
@@ -45,19 +45,29 @@ param.dt = 5*10^-7;
 param.iterMax = 10^4;
 param.tol = 10^-5;
 
-%%Parameters 
+%%Parameters
 param.hi = 1 / (ni-1);
 param.hj = 1 / (nj-1);
 
 
-figure(1)
+figure(1);
 imshow(I);
-title('Before')
+title('Before');
 
 Iinp=sol_Laplace_Equation_Axb(I, mask, param);
-figure(2)
-imshow(Iinp)
-title('After');
+figure(2);
+imshow(Iinp);
+title('After (hi = 1/(ni-1), hj = 1/(nj-1)');
+
+
+param.hi = 1;
+param.hj = 1;
+
+Iinp=sol_Laplace_Equation_Axb(I, mask, param);
+figure(3);
+imshow(Iinp);
+title('After (hi = 1, hj = 1)');
+
 
 %% Challenge image. (We have lost 99% of information)
 clearvars
@@ -77,7 +87,7 @@ mask = mask_img >128; %mask(i,j) == 1 means we have lost information in that pix
 param.hi = 1 / (ni-1);
 param.hj = 1 / (nj-1);
 
-figure(3)
+figure(4)
 imshow(I);
 title('Before')
 
@@ -85,9 +95,20 @@ Iinp(:,:,1)=sol_Laplace_Equation_Axb(I(:,:,1), mask(:,:,1), param);
 Iinp(:,:,2)=sol_Laplace_Equation_Axb(I(:,:,2), mask(:,:,2), param);
 Iinp(:,:,3)=sol_Laplace_Equation_Axb(I(:,:,3), mask(:,:,3), param);
 
-figure(4)
+figure(5)
 imshow(Iinp)
-title('After');
+title('After (hi = 1/(ni-1), hj = 1/(nj-1)');
+
+
+param.hi = 1;
+param.hj = 1;
+Iinp(:,:,1)=sol_Laplace_Equation_Axb(I(:,:,1), mask(:,:,1), param);
+Iinp(:,:,2)=sol_Laplace_Equation_Axb(I(:,:,2), mask(:,:,2), param);
+Iinp(:,:,3)=sol_Laplace_Equation_Axb(I(:,:,3), mask(:,:,3), param);
+
+figure(6)
+imshow(Iinp)
+title('After (hi = 1, hj = 1)');
 
 %% Goal Image
 clearvars;
