@@ -16,6 +16,7 @@ available_images = {'image1', 'image2', 'image3', 'image4', 'image5'};
 for im_index=1:length(available_images)
     name = available_images{im_index};
     im_path = strcat(name, '_toRestore.jpg');
+    im_mask = srtcat(name,'_mask.jpg');
 
     I = double(imread(im_path));
     %I=I(1:10,1:10);
