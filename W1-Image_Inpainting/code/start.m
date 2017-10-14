@@ -11,12 +11,11 @@ clearvars;
 %  image4_toRestore.jpg
 %  image5_toRestore.jpg
 
-available_images = ["image1", "image2", "image3", "image4", "image5"];
+available_images = {'image1', 'image2', 'image3', 'image4', 'image5'};
 
 for im_index=1:length(available_images)
-    name = available_images(im_index);
-    im_path = sprintf('%s_toRestore.jpg', name);
-    im_mask = sprintf('%s_mask.jpg', name);
+    name = available_images{im_index};
+    im_path = strcat(name, '_toRestore.jpg');
 
     I = double(imread(im_path));
     %I=I(1:10,1:10);
