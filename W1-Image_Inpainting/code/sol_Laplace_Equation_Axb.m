@@ -19,8 +19,8 @@ nPixels =(ni+2)*(nj+2); %Number of pixels
 %a_ij: Vector for the value at position ij of matrix A
 
 % h parameters
-h_i_laplace = param.hi ^ 2;
-h_j_laplace = param.hj ^ 2;
+h_i_sq = param.hi ^ 2;
+h_j_sq = param.hj ^ 2;
 
 b = zeros(nPixels,1);
 
@@ -134,27 +134,27 @@ for j=2:nj+1
             %TO COMPLETE 5
             idx_Ai(idx) = p; 
             idx_Aj(idx) = p; 
-            a_ij(idx) = -2*(h_i_laplace + h_j_laplace);
+            a_ij(idx) = -2*(h_i_sq + h_j_sq);
             idx=idx+1;
 
             idx_Ai(idx) = p;
             idx_Aj(idx) = p-1;
-            a_ij(idx) = h_j_laplace;   
+            a_ij(idx) = h_j_sq;   
             idx=idx+1;
             
             idx_Ai(idx) = p;
             idx_Aj(idx) = p+1;
-            a_ij(idx) = h_j_laplace;   
+            a_ij(idx) = h_j_sq;   
             idx=idx+1;
             
             idx_Ai(idx) = p;
-            idx_Aj(idx) = p-(ni+1);
-            a_ij(idx) = h_i_laplace;   
+            idx_Aj(idx) = p-(ni+2);
+            a_ij(idx) = h_i_sq;   
             idx=idx+1;
             
             idx_Ai(idx) = p;
-            idx_Aj(idx) = p+(ni+1);
-            a_ij(idx) = h_i_laplace;   
+            idx_Aj(idx) = p+(ni+2);
+            a_ij(idx) = h_i_sq;   
             idx=idx+1;
             
 

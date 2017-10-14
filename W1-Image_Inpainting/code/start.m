@@ -11,67 +11,73 @@ clearvars;
 %  image4_toRestore.jpg
 %  image5_toRestore.jpg
 
-%name= 'image5';
-name= 'image3';
+available_images = ["image1", "image2", "image3", "image4", "image5"];
 
-I = double(imread([ name '_toRestore.jpg']));
-%I=I(1:10,1:10);
+for im_index=1:length(available_images)
+    name = available_images(im_index);
+    im_path = sprintf('%s_toRestore.jpg', name);
+    im_mask = sprintf('%s_mask.jpg', name);
 
-%Number of pixels for each dimension, and number of channles
-[ni, nj, nC] = size(I);
+    I = double(imread(im_path));
+    %I=I(1:10,1:10);
 
-if nC==3
-    I = mean(I,3); %Convert to b/w. If you load a color image you should comment this line
+    %Number of pixels for each dimension, and number of channles
+    [ni, nj, nC] = size(I);
+
+    if nC==3
+        I = mean(I,3); %Convert to b/w. If you load a color image you should comment this line
+    end
+
+    %Normalize values into [0,1]
+    I=I-min(I(:));
+    I=I/max(I(:));
+
+    %Load the mask
+    mask_img = double(imread(im_mask));
+    %mask_img =mask_img(1:10,1:10);
+    [ni, nj, nC] = size(mask_img);
+    if nC==3
+        mask_img = mask_img(:,:,1); %Convert to b/w. If you load a color image you should comment this line
+    end
+    %We want to inpaint those areas in which mask == 1
+    mask = mask_img >128; %mask(i,j) == 1 means we have lost information in that pixel
+                          %mask(i,j) == 0 means we have information in that
+                          %pixel
+
+    %%%Parameters for gradient descent (you do not need for week1)
+    param.dt = 5*10^-7;
+    param.iterMax = 10^4;
+    param.tol = 10^-5;
+
+    %%Parameters
+    param.hi = 1 / (ni-1);
+    param.hj = 1 / (nj-1);
+
+    figure('Name', sprintf('Before inpainting (%s)', im_path), 'NumberTitle','off');
+    imshow(I);
+
+    figure('Name', sprintf('Mask (%s)', im_mask), 'NumberTitle','off');
+    imshow(mask);
+
+    Iinp=sol_Laplace_Equation_Axb(I, mask, param);
+    figure('Name', sprintf('Inpainted (%s)', im_path), 'NumberTitle','off');
+    imshow(Iinp);
+
+
+    param.hi = 1;
+    param.hj = 1;
+
+    Iinp=sol_Laplace_Equation_Axb(I, mask, param);
+    figure('Name', sprintf('Inpainted (%s) [hi = hj = 1]', im_path), 'NumberTitle','off');
+    imshow(Iinp);
 end
-
-%Normalize values into [0,1]
-I=I-min(I(:));
-I=I/max(I(:));
-
-%Load the mask
-mask_img = double(imread([name '_mask.jpg']));
-%mask_img =mask_img(1:10,1:10);
-[ni, nj, nC] = size(mask_img);
-if nC==3
-    mask_img = mask_img(:,:,1); %Convert to b/w. If you load a color image you should comment this line
-end
-%We want to inpaint those areas in which mask == 1
-mask = mask_img >128; %mask(i,j) == 1 means we have lost information in that pixel
-                      %mask(i,j) == 0 means we have information in that
-                      %pixel
-                                                                    
-%%%Parameters for gradient descent (you do not need for week1)
-param.dt = 5*10^-7;
-param.iterMax = 10^4;
-param.tol = 10^-5;
-
-%%Parameters
-param.hi = 1 / (ni-1);
-param.hj = 1 / (nj-1);
-
-
-figure(1);
-imshow(I);
-title('Before');
-
-Iinp=sol_Laplace_Equation_Axb(I, mask, param);
-figure(2);
-imshow(Iinp);
-title('After (hi = 1/(ni-1), hj = 1/(nj-1)');
-
-
-param.hi = 1;
-param.hj = 1;
-
-Iinp=sol_Laplace_Equation_Axb(I, mask, param);
-figure(3);
-imshow(Iinp);
-title('After (hi = 1, hj = 1)');
 
 
 %% Challenge image. (We have lost 99% of information)
 clearvars
-I=double(imread('image6_toRestore.tif'));
+im_path = 'image6_toRestore.tif';
+im_mask = 'image6_mask.tif';
+I=double(imread(im_path));
 %Normalize values into [0,1]
 I=I/256;
 
@@ -79,7 +85,7 @@ I=I/256;
 %Number of pixels for each dimension, and number of channels
 [ni, nj, nC] = size(I);
 
-mask_img=double(imread('image6_mask.tif'));
+mask_img=double(imread(im_mask));
 mask = mask_img >128; %mask(i,j) == 1 means we have lost information in that pixel
                       %mask(i,j) == 0 means we have information in that
                       %pixel
@@ -87,34 +93,34 @@ mask = mask_img >128; %mask(i,j) == 1 means we have lost information in that pix
 param.hi = 1 / (ni-1);
 param.hj = 1 / (nj-1);
 
-figure(4)
+figure('Name', sprintf('Before inpainting (%s)', im_path), 'NumberTitle','off')
 imshow(I);
-title('Before')
+
+figure('Name', sprintf('Mask (%s)', im_mask), 'NumberTitle','off');
+imshow(mask_img);
 
 Iinp(:,:,1)=sol_Laplace_Equation_Axb(I(:,:,1), mask(:,:,1), param);
 Iinp(:,:,2)=sol_Laplace_Equation_Axb(I(:,:,2), mask(:,:,2), param);
 Iinp(:,:,3)=sol_Laplace_Equation_Axb(I(:,:,3), mask(:,:,3), param);
 
-figure(5)
-imshow(Iinp)
-title('After (hi = 1/(ni-1), hj = 1/(nj-1)');
-
+figure('Name', sprintf('Inpainted (%s)', im_path), 'NumberTitle','off');
+imshow(Iinp);
 
 param.hi = 1;
 param.hj = 1;
 Iinp(:,:,1)=sol_Laplace_Equation_Axb(I(:,:,1), mask(:,:,1), param);
 Iinp(:,:,2)=sol_Laplace_Equation_Axb(I(:,:,2), mask(:,:,2), param);
 Iinp(:,:,3)=sol_Laplace_Equation_Axb(I(:,:,3), mask(:,:,3), param);
-
-figure(6)
-imshow(Iinp)
-title('After (hi = 1, hj = 1)');
+figure('Name', sprintf('Inpainted (%s) [hi = hj = 1]', im_path), 'NumberTitle','off');
+imshow(Iinp);
 
 %% Goal Image
 clearvars;
 
+im_path = 'Image_to_Restore.png';
+
 %Read the image
-I = double(imread('image_to_Restore.png'));
+I = double(imread(im_path));
 
 [ni, nj, nC] = size(I);
 
@@ -130,33 +136,38 @@ I_ch3 = I(:,:,3);
 %TO COMPLETE 1
 %mask_img(i,j) == 1 means we have lost information in that pixel
                                       %mask(i,j) == 0 means we have information in that pixel
-maskR = (I(:,:,1) >= 0.992);
-maskG = I(:,:,2) <=0.01;
-maskB = I(:,:,3) <=0.01;
+maskR = I_ch1 >= 0.992;
+maskG = I_ch2 <= 0.01;
+maskB = I_ch3 <= 0.01;
 mask = maskG .* maskB .* maskR;
+
 %%%Parameters for gradient descent (you do not need for week1)
-%param.dt = 5*10^-7;
-%param.iterMax = 10^4;
-%param.tol = 10^-5;
+param.dt = 5*10^-7;
+param.iterMax = 10^4;
+param.tol = 10^-5;
 
 %parameters
 param.hi = 1 / (ni-1);
 param.hj = 1 / (nj-1);
 
 % for each channel 
-
-figure(1)
+figure('Name', sprintf('Before inpainting (%s)', im_path), 'NumberTitle','off')
 imshow(I);
-title('Before')
+
+figure('Name', 'Computed Mask', 'NumberTitle','off');
+imshow(mask);
 
 Iinp(:,:,1)=sol_Laplace_Equation_Axb(I_ch1, mask, param);
 Iinp(:,:,2)=sol_Laplace_Equation_Axb(I_ch2, mask, param);
 Iinp(:,:,3)=sol_Laplace_Equation_Axb(I_ch3, mask, param);
-    
-figure(2)
-imshow(Iinp)
-title('After');
+figure('Name', sprintf('Inpainted (%s)', im_path), 'NumberTitle','off');
+imshow(Iinp);
 
-figure(3)
-imshow(mask)
-title('Mask');
+param.hi = 1;
+param.hj = 1;
+Iinp(:,:,1)=sol_Laplace_Equation_Axb(I_ch1, mask, param);
+Iinp(:,:,2)=sol_Laplace_Equation_Axb(I_ch2, mask, param);
+Iinp(:,:,3)=sol_Laplace_Equation_Axb(I_ch3, mask, param);
+figure('Name', sprintf('Inpainted (%s) [hi = hj = 1]', im_path), 'NumberTitle','off');
+imshow(Iinp);
+
