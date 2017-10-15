@@ -62,14 +62,6 @@ for im_index=1:length(available_images)
     Iinp=sol_Laplace_Equation_Axb(I, mask, param);
     figure('Name', sprintf('Inpainted (%s)', im_path), 'NumberTitle','off');
     imshow(Iinp);
-
-
-    param.hi = 1;
-    param.hj = 1;
-
-    Iinp=sol_Laplace_Equation_Axb(I, mask, param);
-    figure('Name', sprintf('Inpainted (%s) [hi = hj = 1]', im_path), 'NumberTitle','off');
-    imshow(Iinp);
 end
 
 
@@ -106,14 +98,6 @@ Iinp(:,:,3)=sol_Laplace_Equation_Axb(I(:,:,3), mask(:,:,3), param);
 figure('Name', sprintf('Inpainted (%s)', im_path), 'NumberTitle','off');
 imshow(Iinp);
 
-param.hi = 1;
-param.hj = 1;
-Iinp(:,:,1)=sol_Laplace_Equation_Axb(I(:,:,1), mask(:,:,1), param);
-Iinp(:,:,2)=sol_Laplace_Equation_Axb(I(:,:,2), mask(:,:,2), param);
-Iinp(:,:,3)=sol_Laplace_Equation_Axb(I(:,:,3), mask(:,:,3), param);
-figure('Name', sprintf('Inpainted (%s) [hi = hj = 1]', im_path), 'NumberTitle','off');
-imshow(Iinp);
-
 %% Goal Image
 clearvars;
 
@@ -136,10 +120,7 @@ I_ch3 = I(:,:,3);
 %TO COMPLETE 1
 %mask_img(i,j) == 1 means we have lost information in that pixel
                                       %mask(i,j) == 0 means we have information in that pixel
-maskR = I_ch1 >= 0.992;
-maskG = I_ch2 <= 0.01;
-maskB = I_ch3 <= 0.01;
-mask = maskG .* maskB .* maskR;
+mask = I_ch1==1 & I_ch2==0 & I_ch3==0;
 
 %%%Parameters for gradient descent (you do not need for week1)
 param.dt = 5*10^-7;
@@ -162,12 +143,3 @@ Iinp(:,:,2)=sol_Laplace_Equation_Axb(I_ch2, mask, param);
 Iinp(:,:,3)=sol_Laplace_Equation_Axb(I_ch3, mask, param);
 figure('Name', sprintf('Inpainted (%s)', im_path), 'NumberTitle','off');
 imshow(Iinp);
-
-param.hi = 1;
-param.hj = 1;
-Iinp(:,:,1)=sol_Laplace_Equation_Axb(I_ch1, mask, param);
-Iinp(:,:,2)=sol_Laplace_Equation_Axb(I_ch2, mask, param);
-Iinp(:,:,3)=sol_Laplace_Equation_Axb(I_ch3, mask, param);
-figure('Name', sprintf('Inpainted (%s) [hi = hj = 1]', im_path), 'NumberTitle','off');
-imshow(Iinp);
-

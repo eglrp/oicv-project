@@ -177,7 +177,7 @@ end
     % A is a sparse matrix, so for memory requirements we create a sparse
     % matrix
     % TO COMPLETE 7
-    A=sparse(idx_Ai, idx_Aj, a_ij, nPixels, nPixels); %??? and ???? is the size of matrix A
+    A=sparse(idx_Ai, idx_Aj, a_ij, nPixels, nPixels); %nPixels and nPixels is the size of matrix A
     
     % Solve the sistem of equations
     x=mldivide(A,b);
