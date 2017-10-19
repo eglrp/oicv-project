@@ -59,8 +59,15 @@ for im_index=1:length(available_images)
     figure('Name', sprintf('Mask (%s)', im_mask), 'NumberTitle','off');
     imshow(mask);
 
-    Iinp=sol_Laplace_Equation_Axb(I, mask, param);
+    Iinp=G8_Laplace_Equation_Axb(I, mask, param);
     figure('Name', sprintf('Inpainted (%s)', im_path), 'NumberTitle','off');
+    imshow(Iinp);
+
+    param.hi = 1;
+    param.hj = 1;
+
+    Iinp= G8_Laplace_Equation_Axb(I, mask, param);
+    figure('Name', sprintf('Inpainted (%s) [hi = hj = 1]', im_path), 'NumberTitle','off');
     imshow(Iinp);
 end
 
@@ -91,11 +98,19 @@ imshow(I);
 figure('Name', sprintf('Mask (%s)', im_mask), 'NumberTitle','off');
 imshow(mask_img);
 
-Iinp(:,:,1)=sol_Laplace_Equation_Axb(I(:,:,1), mask(:,:,1), param);
-Iinp(:,:,2)=sol_Laplace_Equation_Axb(I(:,:,2), mask(:,:,2), param);
-Iinp(:,:,3)=sol_Laplace_Equation_Axb(I(:,:,3), mask(:,:,3), param);
+Iinp(:,:,1)=G8_Laplace_Equation_Axb(I(:,:,1), mask(:,:,1), param);
+Iinp(:,:,2)=G8_Laplace_Equation_Axb(I(:,:,2), mask(:,:,2), param);
+Iinp(:,:,3)=G8_Laplace_Equation_Axb(I(:,:,3), mask(:,:,3), param);
 
 figure('Name', sprintf('Inpainted (%s)', im_path), 'NumberTitle','off');
+imshow(Iinp);
+
+param.hi = 1;
+param.hj = 1;
+Iinp(:,:,1)=G8_Laplace_Equation_Axb(I(:,:,1), mask(:,:,1), param);
+Iinp(:,:,2)=G8_Laplace_Equation_Axb(I(:,:,2), mask(:,:,2), param);
+Iinp(:,:,3)=G8_Laplace_Equation_Axb(I(:,:,3), mask(:,:,3), param);
+figure('Name', sprintf('Inpainted (%s) [hi = hj = 1]', im_path), 'NumberTitle','off');
 imshow(Iinp);
 
 %% Goal Image
@@ -138,8 +153,16 @@ imshow(I);
 figure('Name', 'Computed Mask', 'NumberTitle','off');
 imshow(mask);
 
-Iinp(:,:,1)=sol_Laplace_Equation_Axb(I_ch1, mask, param);
-Iinp(:,:,2)=sol_Laplace_Equation_Axb(I_ch2, mask, param);
-Iinp(:,:,3)=sol_Laplace_Equation_Axb(I_ch3, mask, param);
+Iinp(:,:,1)=G8_Laplace_Equation_Axb(I_ch1, mask, param);
+Iinp(:,:,2)=G8_Laplace_Equation_Axb(I_ch2, mask, param);
+Iinp(:,:,3)=G8_Laplace_Equation_Axb(I_ch3, mask, param);
 figure('Name', sprintf('Inpainted (%s)', im_path), 'NumberTitle','off');
+imshow(Iinp);
+
+param.hi = 1;
+param.hj = 1;
+Iinp(:,:,1)=G8_Laplace_Equation_Axb(I_ch1, mask, param);
+Iinp(:,:,2)=G8_Laplace_Equation_Axb(I_ch2, mask, param);
+Iinp(:,:,3)=G8_Laplace_Equation_Axb(I_ch3, mask, param);
+figure('Name', sprintf('Inpainted (%s) [hi = hj = 1]', im_path), 'NumberTitle','off');
 imshow(Iinp);
