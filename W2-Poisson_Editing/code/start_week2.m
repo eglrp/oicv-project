@@ -16,7 +16,7 @@ param.hj=1;
 % 
 %   * 'finite_differences': apply the finite differences formula directly
 %      to the image to compute the laplacian.
-param.laplacian_method = 'forward';  
+param.laplacian_method = 'backward';  
 
 
 %masks to exchange: Eyes
@@ -39,8 +39,8 @@ for nC = 1: nChannels
 
             driving_on_src = (sol_DiBwd(drivingGrad_i, param.hi)) + ...
                              (sol_DjBwd(drivingGrad_j, param.hj));
-        case 'finite_differences'
-            error('finite differences method not implemented');
+        case 'finite differences'
+            driving_on_src = G8_finite_differences(src(:,:,nC), param);
         otherwise
             error('param.laplacian_method not one of: forward, backward, finite_differences');
     end
@@ -72,10 +72,10 @@ for nC = 1: nChannels
 
             driving_on_src = (sol_DiBwd(drivingGrad_i, param.hi)) + ...
                              (sol_DjBwd(drivingGrad_j, param.hj));
-        case 'finite_differences'
+        case 'finite differences'
             % TODO: Implement finite differences method to compute
             % Laplacian, that is, use the formula directly
-            error('finite differences method not implemented');
+            driving_on_src = G8_finite_differences(src(:,:,nC), param);
         otherwise
             error('param.laplacian_method not one of: forward, backward, finite_differences');
     end
@@ -87,5 +87,6 @@ for nC = 1: nChannels
 
     dst1(:,:,nC) = G8_Poisson_Equation_Axb(dst1(:,:,nC), mask_dst,  param);
 end
-
+figure (1)
 imshow(dst1/256)
+title(param.laplacian_method)
