@@ -7,7 +7,8 @@ function [ result ] = sol_DjCentral(  I, hj  )
 
     result=I;
     %Begin To Complete 11
-    result(:, 2:end-1) = (I(:, 3:end)-I(:, 1:end-2))./(2*hj); %result(:, 2:end)
+    result(:, 2:end-1) = (I(:, 3:end)-I(:, 1:end-2))./(2*hj);
+    %result = (sol_DjBwd(I, hj) + sol_DjFwd(I, hj))/2;
     %End To Complete 11
 
 end
