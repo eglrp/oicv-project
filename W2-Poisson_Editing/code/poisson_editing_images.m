@@ -1,8 +1,8 @@
 clearvars;
 
 % VARIABLES
-src_name = 'spacecraft';          % Change this value
-dst_name = 'airport_spacecraft';  % Change this value
+src_name = 'starwars';          % Options: starwars, spacecraft
+dst_name = 'airport_starwars';  % Options: airport_starwars, airport_spacecrafts
 
 % SCRIPT
 src = double(imread(sprintf('images/%s.jpg', src_name))); 
@@ -39,14 +39,14 @@ for i=1:length(methods)
                 drivingGrad_i = sol_DiFwd(src(:, :, nC), param.hi);
                 drivingGrad_j = sol_DjFwd(src(:, :, nC), param.hj);
 
-                driving_on_src = (sol_DiFwd(drivingGrad_i, param.hi)) + ...
-                                 (sol_DjFwd(drivingGrad_j, param.hj));
+                driving_on_src = (sol_DiBwd(drivingGrad_i, param.hi)) + ...
+                                 (sol_DjBwd(drivingGrad_j, param.hj));
             case 'backward'
                 drivingGrad_i = sol_DiBwd(src(:, :, nC), param.hi);
                 drivingGrad_j = sol_DjBwd(src(:, :, nC), param.hj);
 
-                driving_on_src = (sol_DiBwd(drivingGrad_i, param.hi)) + ...
-                                 (sol_DjBwd(drivingGrad_j, param.hj));
+                driving_on_src = (sol_DiFwd(drivingGrad_i, param.hi)) + ...
+                                 (sol_DjFwd(drivingGrad_j, param.hj));
             case 'finite differences'
                 driving_on_src = G8_finite_differences(src(:,:,nC), param);
             case 'central difference'

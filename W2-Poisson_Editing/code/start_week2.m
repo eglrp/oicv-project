@@ -8,11 +8,13 @@ param.hj=1;
 
 % How to compute the laplacian of the inserted image.
 % Options:
-%   * 'forward': use the forward derivative to compute the gradient from
-%      the image and then the laplacian from the gradient
+%   * 'forward': first uses the forward derivative to compute the gradient from
+%      the image and then the laplacian from the gradient.
+%      That is: Laplacian(u) = Back_i(Forw_i(u)) + Back_j(Forw_j(u))
 %
-%   * 'backward': use the backward derivative to compute the gradient from
-%      the image and then the laplacian from the gradient
+%   * 'backward': first uses the backward derivative to compute the gradient from
+%      the image and then the laplacian from the gradient.
+%      That is: Laplacian(u) = Forw_i(Back_i(u)) + Forw_j(Back_j(u))
 % 
 %   * 'finite_differences': apply the finite differences formula directly
 %      to the image to compute the laplacian.
@@ -33,14 +35,14 @@ for i=1:length(methods)
                 drivingGrad_i = sol_DiFwd(src(:, :, nC), param.hi);
                 drivingGrad_j = sol_DjFwd(src(:, :, nC), param.hj);
 
-                driving_on_src = (sol_DiFwd(drivingGrad_i, param.hi)) + ...
-                                 (sol_DjFwd(drivingGrad_j, param.hj));
+                driving_on_src = (sol_DiBwd(drivingGrad_i, param.hi)) + ...
+                                 (sol_DjBwd(drivingGrad_j, param.hj));
             case 'backward'
                 drivingGrad_i = sol_DiBwd(src(:, :, nC), param.hi);
                 drivingGrad_j = sol_DjBwd(src(:, :, nC), param.hj);
 
-                driving_on_src = (sol_DiBwd(drivingGrad_i, param.hi)) + ...
-                                 (sol_DjBwd(drivingGrad_j, param.hj));
+                driving_on_src = (sol_DiFwd(drivingGrad_i, param.hi)) + ...
+                                 (sol_DjFwd(drivingGrad_j, param.hj));
             case 'finite differences'
                 driving_on_src = G8_finite_differences(src(:,:,nC), param);
             case 'central difference'
@@ -72,14 +74,14 @@ for i=1:length(methods)
                 drivingGrad_i = sol_DiFwd(src(:, :, nC), param.hi);
                 drivingGrad_j = sol_DjFwd(src(:, :, nC), param.hj);
 
-                driving_on_src = (sol_DiFwd(drivingGrad_i, param.hi)) + ...
-                                 (sol_DjFwd(drivingGrad_j, param.hj));
+                driving_on_src = (sol_DiBwd(drivingGrad_i, param.hi)) + ...
+                                 (sol_DjBwd(drivingGrad_j, param.hj));
             case 'backward'
                 drivingGrad_i = sol_DiBwd(src(:, :, nC), param.hi);
                 drivingGrad_j = sol_DjBwd(src(:, :, nC), param.hj);
 
-                driving_on_src = (sol_DiBwd(drivingGrad_i, param.hi)) + ...
-                                 (sol_DjBwd(drivingGrad_j, param.hj));
+                driving_on_src = (sol_DiFwd(drivingGrad_i, param.hi)) + ...
+                                 (sol_DjFwd(drivingGrad_j, param.hj));
             case 'finite differences'
                 % TODO: Implement finite differences method to compute
                 % Laplacian, that is, use the formula directly
