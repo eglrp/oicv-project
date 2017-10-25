@@ -18,7 +18,7 @@ param.hj=1;
 % 
 %   * 'finite_differences': apply the finite differences formula directly
 %      to the image to compute the laplacian.
-methods = {'central difference', 'forward', 'backward', 'finite differences'};
+methods = {'forward', 'backward', 'finite differences'};
 for i=1:length(methods)
     param.laplacian_method = methods{i};  
 
@@ -44,13 +44,7 @@ for i=1:length(methods)
                 driving_on_src = (sol_DiFwd(drivingGrad_i, param.hi)) + ...
                                  (sol_DjFwd(drivingGrad_j, param.hj));
             case 'finite differences'
-                driving_on_src = G8_finite_differences(src(:,:,nC), param);
-            case 'central difference'
-                drivingGrad_i = sol_DiCentral(src(:, :, nC), param.hi);
-                drivingGrad_j = sol_DjCentral(src(:, :, nC), param.hj);
-
-                driving_on_src = (sol_DiCentral(drivingGrad_i, param.hi)) + ...
-                     (sol_DjCentral(drivingGrad_j, param.hj));
+                 driving_on_src = G8_finite_differences(src(:,:,nC), param);
             otherwise
                 error('param.laplacian_method not one of: forward, backward, finite differences, central difference');
         end
@@ -86,13 +80,6 @@ for i=1:length(methods)
                 % TODO: Implement finite differences method to compute
                 % Laplacian, that is, use the formula directly
                 driving_on_src = G8_finite_differences(src(:,:,nC), param);
-
-            case 'central difference'
-                drivingGrad_i = sol_DiCentral(src(:, :, nC), param.hi);
-                drivingGrad_j = sol_DjCentral(src(:, :, nC), param.hj);
-
-                driving_on_src = (sol_DiCentral(drivingGrad_i, param.hi)) + ...
-                     (sol_DjCentral(drivingGrad_j, param.hj));
             otherwise
                 error('param.laplacian_method not one of: forward, backward, finite_differences');
         end
