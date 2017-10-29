@@ -90,17 +90,17 @@ function [ phi ] = G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, lambda
         %Diference. This stopping criterium has the problem that phi can
         %change, but not the zero level set, that it really is what we are
         %looking for.
-        dif = mean(sum( (phi(:) - phi_old(:)).^2 ))
+        dif = mean(sum( (phi(:) - phi_old(:)).^2 ));
 
         %Plot the level sets surface
         subplot(1,2,1) 
             %The level set function
-            hold on
-            surfc(phi)  %TODO 16: Line to complete 
+            hold on;
+            surfc(phi);  %TODO 16: Line to complete 
 
             %The zero level set over the surface
             contour(phi<0); %TODO 17: Line to complete
-            hold off
+            hold off;
             title('Phi Function');
 
         %Plot the curve evolution over the image
@@ -115,5 +115,9 @@ function [ phi ] = G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, lambda
             hold off
         drawnow;
         pause(.0001); 
+        
+        fprintf('Iter: %d\n', nIter);
+        fprintf('Diff: %s\n', dif);
+        fprintf('\n');
     end
 end

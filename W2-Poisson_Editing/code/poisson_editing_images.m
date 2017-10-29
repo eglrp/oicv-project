@@ -1,8 +1,8 @@
 clearvars;
 
 % VARIABLES
-src_name = 'starwars';          % Options: starwars, spacecraft
-dst_name = 'airport_starwars';  % Options: airport_starwars, airport_spacecrafts
+src_name = 'starwars';          % Options: starwars, spacecraft, cars_in_road_src
+dst_name = 'airport_starwars';  % Options: airport_starwars, airport_spacecrafts, cars_in_road_dst
 
 % SCRIPT
 src = double(imread(sprintf('images/%s.jpg', src_name))); 
