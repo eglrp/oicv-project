@@ -63,5 +63,5 @@ phi_0=phi_0-1;
 
 
 %%Explicit Gradient Descent
-seg=sol_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, lambda2, tol, epHeaviside, dt, iterMax, reIni );
+seg=G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, lambda2, tol, epHeaviside, dt, iterMax, reIni );
 
