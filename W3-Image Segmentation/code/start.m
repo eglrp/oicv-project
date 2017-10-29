@@ -4,8 +4,8 @@ clc
 
 %I=double(imread('zigzag_mask.png'));
 %I=mean(I,3); %To 2D matrix
-I=double(imread('circles.png'));
-%I=double(imread('noisedCircles.tif'));
+%I=double(imread('circles.png'));
+I=double(imread('noisedCircles.tif'));
 %I=double(imread('phantom17.bmp'));
 %I=double(imread('phantom18.bmp'));
 I=mean(I,3);
@@ -22,7 +22,7 @@ I=I/max(I(:));
 %phantom17 mu=1, mu=2, mu=10
 %phantom18 mu=0.2 mu=0.5
 %hola carola mu=1
-mu=1;
+mu=0.1;
 nu=0;
 
 

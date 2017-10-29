@@ -43,7 +43,7 @@ function [ phi ] = G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, lambda
 
 
         %Regularized Dirac's Delta computation
-        delta_phi = sol_diracReg(phi, epHeaviside);   %notice delta_phi=H'(phi)	
+        delta_phi = G8_diracReg(phi, epHeaviside);   %notice delta_phi=H'(phi)	
 
         %derivatives estimation
         %i direction, forward finite differences
