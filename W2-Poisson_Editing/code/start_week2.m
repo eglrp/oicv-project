@@ -77,8 +77,6 @@ for i=1:length(methods)
                 driving_on_src = (sol_DiFwd(drivingGrad_i, param.hi)) + ...
                                  (sol_DjFwd(drivingGrad_j, param.hj));
             case 'finite differences'
-                % TODO: Implement finite differences method to compute
-                % Laplacian, that is, use the formula directly
                 driving_on_src = G8_finite_differences(src(:,:,nC), param);
             otherwise
                 error('param.laplacian_method not one of: forward, backward, finite_differences');
