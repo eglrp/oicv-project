@@ -1,0 +1,14 @@
+mu=0.01;
+nu=0;
+
+lambda1=1;
+lambda2=1;
+
+epHeaviside=1;
+eta=1;
+tol=0.1;
+dt=(10^-2)/mu;
+iterMax=100000;
+
+reIni=0;
+

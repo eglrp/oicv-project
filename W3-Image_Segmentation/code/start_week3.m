@@ -2,12 +2,12 @@
 clearvars;
 clc
 
-%I=double(imread('zigzag_mask.png'));
-%I=mean(I,3); %To 2D matrix
-%I=double(imread('circles.png'));
-I=double(imread('noisedCircles.tif'));
-%I=double(imread('phantom17.bmp'));
-%I=double(imread('phantom18.bmp'));
+fname = 'noisedCircles.tif';
+% fname = 'phantom17.bmp'; 
+% fname = 'phantom18.bmp'; 
+% fname = 'Image_to_Restore.png';  
+
+I=double(imread(fname));
 I=mean(I,3);
 I=I-min(I(:));
 I=I/max(I(:));
@@ -34,14 +34,14 @@ lambda2=1;
 
 epHeaviside=1;
 %eta=0.01;
-eta=1
-tol=0.1;
-%dt=(10^-2)/mu; 
+eta=1;
+tol=0.01;
+% dt=(10^-2)/mu; 
 dt=(10^-1)/mu;
-iterMax=100000
+iterMax=100000;
 %reIni=0; %Try both of them
-%reIni=500;
-reIni=100;
+reIni=500;
+% reIni=100;
 [X, Y]=meshgrid(1:nj, 1:ni);
 
 %%Initial phi
@@ -63,5 +63,5 @@ phi_0=phi_0-1;
 
 
 %%Explicit Gradient Descent
-seg=G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, lambda2, tol, epHeaviside, dt, iterMax, reIni );
+seg=G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, lambda2, tol, epHeaviside, dt, iterMax, reIni, fname);
 

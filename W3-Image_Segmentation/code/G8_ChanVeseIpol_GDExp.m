@@ -1,4 +1,5 @@
-function [ phi ] = G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, lambda2, tol, epHeaviside, dt, iterMax, reIni )
+function [ phi ] = G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, ...
+    lambda2, tol, epHeaviside, dt, iterMax, reIni, fname)
     %Implementation of the Chan-Vese segmentation following the explicit
     %gradient descent in the paper of Pascal Getreur "Chan-Vese Segmentation".
     %It is the equation 19 from that paper
@@ -14,6 +15,7 @@ function [ phi ] = G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, lambda
     % dt     : time step
     %iterMax : MAximum number of iterations
     %reIni   : Iterations for reinitialization. 0 means no reinitializacion
+    %fname   : Name of the file, used to save predictions / curve evolution
 
     [ni,nj]=size(I);
     hi=1;
@@ -91,30 +93,38 @@ function [ phi ] = G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, lambda
         %change, but not the zero level set, that it really is what we are
         %looking for.
         dif = mean(sum( (phi(:) - phi_old(:)).^2 ));
-
-        %Plot the level sets surface
-        subplot(1,2,1) 
+        
+        if mod(nIter-1, 20) == 0
+            
+            fig = figure('doublebuffer','off','Visible','Off');
+            %Plot the level sets surface
+            subplot(1,2,1) 
             %The level set function
             hold on;
             surfc(phi);  %TODO 16: Line to complete 
+            view(25, 20);  % Surface viewpoint
 
             %The zero level set over the surface
             contour(phi<0); %TODO 17: Line to complete
             hold off;
             title('Phi Function');
 
-        %Plot the curve evolution over the image
-        subplot(1,2,2)
+            %Plot the curve evolution over the image
+            subplot(1,2,2)
             imagesc(I);        
-            colormap gray;
+            colormap([hot(64);gray(64)])
             hold on;
             contour(phi<0, 'Color', 'r') %TODO 18: Line to complete
             title('Image and zero level set of Phi')
 
             axis off;
-            hold off
-        drawnow;
-        pause(.0001); 
+            hold off;
+            
+            % Save plot
+            [folder, filename, ext] = fileparts(fname);
+            save_path = fullfile('code', 'curve_evolution', filename, sprintf('iter%d.png', nIter));
+            saveas(fig, save_path);
+        end
         
         fprintf('Iter: %d\n', nIter);
         fprintf('Diff: %s\n', dif);
