@@ -94,7 +94,7 @@ function [ phi ] = G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, ...
         %looking for.
         dif = mean(sum( (phi(:) - phi_old(:)).^2 ));
         
-        if mod(nIter-1, 20) == 0
+        if mod(nIter-1, 30) == 0
             
             fig = figure('doublebuffer','off','Visible','Off');
             %Plot the level sets surface
