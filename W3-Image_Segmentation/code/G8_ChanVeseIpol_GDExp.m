@@ -1,5 +1,5 @@
 function [ phi ] = G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, ...
-    lambda2, tol, epHeaviside, dt, iterMax, reIni, fname)
+    lambda2, tol, epHeaviside, dt, iterMax, reIni, fname, plot_iters)
     %Implementation of the Chan-Vese segmentation following the explicit
     %gradient descent in the paper of Pascal Getreur "Chan-Vese Segmentation".
     %It is the equation 19 from that paper
@@ -16,6 +16,7 @@ function [ phi ] = G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, ...
     %iterMax : MAximum number of iterations
     %reIni   : Iterations for reinitialization. 0 means no reinitializacion
     %fname   : Name of the file, used to save predictions / curve evolution
+    %plot_iters : Number of iterations between plots
 
     [ni,nj]=size(I);
     hi=1;
@@ -94,34 +95,32 @@ function [ phi ] = G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, ...
         %looking for.
         dif = mean(sum( (phi(:) - phi_old(:)).^2 ));
         
-        if mod(nIter-1, 30) == 0
+        if mod(nIter-1, plot_iters) == 0
             
             fig = figure('doublebuffer','off','Visible','Off');
             %Plot the level sets surface
-            subplot(1,2,1) 
+            ax1 = subplot(1,2,1);
             %The level set function
             hold on;
-            surfc(phi);  %TODO 16: Line to complete 
+            surfc(phi);
             view(25, 20);  % Surface viewpoint
-
-            %The zero level set over the surface
-            contour(phi<0); %TODO 17: Line to complete
+            contour(phi>0); %The zero level set over the surface
             hold off;
+            colormap(ax1, 'hot');
             title('Phi Function');
 
             %Plot the curve evolution over the image
-            subplot(1,2,2)
+            ax2 = subplot(1,2,2);
             imagesc(I);        
-            colormap([hot(64);gray(64)])
             hold on;
-            contour(phi<0, 'Color', 'r') %TODO 18: Line to complete
-            title('Image and zero level set of Phi')
-
+            contour(phi>0, 'Color', 'r');
             axis off;
             hold off;
+            colormap(ax2, 'gray');
+            title('Image and zero level set of Phi');
             
             % Save plot
-            [folder, filename, ext] = fileparts(fname);
+            [~, filename, ~] = fileparts(fname);
             save_path = fullfile('code', 'curve_evolution', filename, sprintf('iter%d.png', nIter));
             saveas(fig, save_path);
         end
