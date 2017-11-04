@@ -131,4 +131,30 @@ function [ phi ] = G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, ...
         fprintf('Diff: %s\n', dif);
         fprintf('\n');
     end
+    fig = figure('doublebuffer','off','Visible','Off');
+    %Plot the level sets surface
+    ax1 = subplot(1,2,1);
+    %The level set function
+    hold on;
+    surfc(phi);
+    view(25, 20);  % Surface viewpoint
+    contour(phi>0); %The zero level set over the surface
+    hold off;
+    colormap(ax1, 'hot');
+    title('Phi Function');
+
+    %Plot the curve evolution over the image
+    ax2 = subplot(1,2,2);
+    imagesc(I);        
+    hold on;
+    contour(phi>0, 'Color', 'r');
+    axis off;
+    hold off;
+    colormap(ax2, 'gray');
+    title('Image and zero level set of Phi');
+
+    % Save plot
+    [~, filename, ~] = fileparts(fname);
+    save_path = fullfile('code', 'curve_evolution', filename, sprintf('iter%d.png', nIter));
+    saveas(fig, save_path);
 end
