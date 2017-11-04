@@ -76,9 +76,6 @@ function [ phi ] = G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, ...
             - nu - lambda1*(I(2:end-1,2:end-1) - c1).^2 + lambda2*(I(2:end-1,2:end-1) - c2).^2 ) ) ...
             ./(1 + dt*delta_phi(2:end-1,2:end-1).*(A(2:end-1,2:end-1) + A(1:end-2,2:end-1) +...
             B(2:end-1, 2:end-1)+ B(2:end-1, 1:end-2))); %TODO 15: Line to complete
-        if mod(nIter-1, 10*plot_iters)==0
-            plot_iters=plot_iters*2;
-        end
 
         %Reinitialization of phi
         if 	reIni>0 && mod(nIter, reIni)==0
@@ -125,6 +122,12 @@ function [ phi ] = G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, ...
             [~, filename, ~] = fileparts(fname);
             save_path = fullfile('code', 'curve_evolution', filename, sprintf('iter%d.png', nIter));
             saveas(fig, save_path);
+        end
+        
+        % Exponential growth of time interval between captured frames
+        % Every 10 frames we duplicate the time interval (plot_iters)
+        if mod(nIter-1, 10*plot_iters)==0
+            plot_iters=plot_iters*2;
         end
         
         fprintf('Iter: %d\n', nIter);
