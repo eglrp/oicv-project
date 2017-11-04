@@ -126,7 +126,7 @@ function [ phi ] = G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, ...
         
         % Exponential growth of time interval between captured frames
         % Every 10 frames we duplicate the time interval (plot_iters)
-        if mod(nIter-1, 10*plot_iters)==0
+        if mod(nIter, 10*plot_iters)==0
             plot_iters=plot_iters*2;
         end
         
