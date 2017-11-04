@@ -5,19 +5,19 @@ clc
 %% Parameters
 names = {'circles.png', 'noisedCircles.tif', 'phantom17.bmp', 'phantom18.bmp', 'phantom19.bmp', 'Image_to_Restore.png'};
 
-mus = [5, 0.1, 2, 0.2, 0.1, 1];
+mus = [1, 1, 1, 0.2, 0.1, 1];
 nu=0;
 lambdas = [1, 1, 1, 1, 1, 10^-3];
 
 epHeaviside=1;
 eta=1;
-tols=[0.05, 0.05, 0.005, 0.05, 0.1, 0.005];
+tols=[0.09, 1e-3, 1e-3, 0.05, 0.1, 0.005];
 
 dts=(10^-1)./mus;
 iterMax=5000;
 reIni=1500;
 
-plot_iters = 50;
+plot_iters = 10;
 
 % Length and area parameters
     % circles.png mu=1, mu=2, mu=10
@@ -32,6 +32,7 @@ plot_iters = 50;
 %% Main cycle
 
 for i=1:length(names)
+%for i=2:2
     fname = names{i};
     fprintf('Processing file %s\n', fname);
     I=double(imread(fname));
