@@ -30,7 +30,7 @@ plot_iters = 10000;
     % dt=(10^-2)/mu; 
     
 %% Main cycle
-iters = 5;%1:length(names);  % Change this value if you want to segment a subset of the images
+iters = 1:length(names);  % Change this value if you want to segment a subset of the images
 
 for i=iters
     fname = names{i};
