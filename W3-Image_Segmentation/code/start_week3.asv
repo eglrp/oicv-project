@@ -17,7 +17,7 @@ dts=(10^-1)./mus;
 iterMax=5000;
 reIni=1500;
 
-plot_iters = 10000;
+plot_iters = 10;
 
 % Length and area parameters
     % circles.png mu=1, mu=2, mu=10
@@ -30,7 +30,7 @@ plot_iters = 10000;
     % dt=(10^-2)/mu; 
     
 %% Main cycle
-iters = 5;%1:length(names);  % Change this value if you want to segment a subset of the images
+iters = 1:length(names);  % Change this value if you want to segment a subset of the images
 
 for i=iters
     fname = names{i};
@@ -63,10 +63,11 @@ for i=iters
 
 
     %%Explicit Gradient Descent
-    [seg, c1, c2]=G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, lambda2, tol, epHeaviside, dt, iterMax, reIni, fname, plot_iters);
+    seg=G8_ChanVeseIpol_GDExp( I, phi_0, mu, nu, eta, lambda1, lambda2, tol, epHeaviside, dt, iterMax, reIni, fname, plot_iters);
     
-    I(seg>=0)=c1;
-    I(seg<0)=c2;
-
-    imwrite(I, strcat('code\result_',fname(1:end-3),'png'))
+    I(seg>=0)=255;
+    I(seg<0)=0;
+    figure(i)
+    imshow(I)
+    imwrite('result_'
 end
