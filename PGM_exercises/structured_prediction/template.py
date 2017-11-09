@@ -17,11 +17,24 @@ from sklearn.svm import LinearSVC
 
 from plot_segments import plot_segments
 
+""" CONSTANTS """
+
+structured_learning_options = {
+    'oneslack': OneSlackSSVM,
+    'nslack': NSlackSSVM,
+    'frankwolfe': FrankWolfeSSVM,
+}
+
+""" PARAMETERS """
+C = 100
 num_segments_per_jacket = 40
+num_segments_classes = 12
 add_gaussian_noise_to_features = False
 sigma_noise = 0.1
+plot_example = False
 plot_labeling = False
-plot_coefficients = False
+plot_coefficients = True
+structured_learning_algorithm = 'frankwolfe'  # One of: 'oneslack', 'nslack', 'frankwolfe'
 
 """ 
 Load the segments and the groundtruth for all jackets
@@ -45,8 +58,9 @@ labels_segments = np.array(labels_segments).astype(int)
 """
 Show groundtruth for 3rd jacket
 """
-n = 2
-plot_segments(segments[n], sheet.ide[n], labels_segments[n])
+if plot_example:
+    n = 2
+    plot_segments(segments[n], sheet.ide[n], labels_segments[n])
 
 """ 
 Make matrices X of shape (number of jackets, number of features) 
@@ -60,22 +74,22 @@ num_jackets = labels_segments.shape[0]
 num_labels = np.unique(np.ravel(labels_segments)).size
 
 """ CHANGE THIS IF YOU CHANGE NUMBER OF FEATURES """
-num_features = 7
+num_features = 5
 X = np.zeros((num_jackets, num_segments_per_jacket, num_features))
 
 for jacket_segments, i in zip(segments, range(num_jackets)):
     for s, j in zip(jacket_segments, range(num_segments_per_jacket)):
         """ set the features """
         X[i, j, 0:num_features] = \
-            s.x0norm, s.y0norm, s.x1norm, s.y1norm, \
-            (s.x0norm + s.x1norm) / 2., (s.y0norm + s.y1norm) / 2., \
-            s.angle / (2 * np.pi)
-        """ all possible features at present, see segment.py """
-        # s.x0, s.y0, s.x1, s.y1, \
+            s.x0norm, s.y0norm, s.x1norm, s.y1norm, s.angle
+            # s.x0, s.y0, s.x1, s.y1, \
+            # s.x0norm, s.y0norm, s.x1norm, s.y1norm, \
+            # (s.x0norm + s.x1norm) / 2., (s.y0norm + s.y1norm) / 2., \
+            # np.sqrt((s.x0norm - s.x1norm) ** 2 + (s.y0norm - s.y1norm) ** 2), \
+            # s.angle
         # s.x0norm, s.y0norm, s.x1norm, s.y1norm, \
-        # (s.x0norm+s.x1norm)/2., (s.y0norm+s.y1norm)/2., \
-        # np.sqrt((s.x0norm-s.x1norm)**2 + (s.y0norm-s.y1norm)**2), \
-        # s.angle, \
+        # (s.x0norm + s.x1norm) / 2., (s.y0norm + s.y1norm) / 2., \
+        # s.angle / (2 * np.pi)
 
 print('X, Y done')
 
@@ -88,6 +102,18 @@ if add_gaussian_noise_to_features:
 DEFINE HERE YOUR GRAPHICAL MODEL AND CHOOSE ONE LEARNING METHOD
 (OneSlackSSVM, NSlackSSVM, FrankWolfeSSVM)
 """
+model = ChainCRF()
+try:
+    ssvm_class = structured_learning_options[structured_learning_algorithm]
+except KeyError:
+    raise Exception('{!r} structured learning model not supported. Use one of: {!r}'.format(
+        structured_learning_algorithm,
+        structured_learning_options.keys(),
+    ))
+ssvm = ssvm_class(model=model, C=C)
+
+""" LINEAR SVM """
+svm = LinearSVC(C=C)
 
 """ 
 Compare SVM with S-SVM doing k-fold cross validation, k=5, see scikit-learn.org 
@@ -101,8 +127,7 @@ wrong_segments_crf = []
 wrong_segments_svm = []
 
 kf = KFold(num_jackets, n_folds=n_folds)
-fold = 0
-for train_index, test_index in kf:
+for fold, (train_index, test_index) in enumerate(kf):
     print(' ')
     print('train index {}'.format(train_index))
     print('test index {}'.format(test_index))
@@ -113,11 +138,19 @@ for train_index, test_index in kf:
     Y_test = Y[test_index]
 
     """ YOUR S-SVM TRAINING CODE HERE """
+    ssvm.fit(X_train, Y_train)
 
     """ LABEL THE TESTING SET AND PRINT RESULTS """
+    crf_score = ssvm.score(X_test, Y_test)
+    print("Test score with chain CRF: {}".format(crf_score))
+    scores_crf[fold] = crf_score
 
-    """ figure showing the result of classification of segments for
-    each jacket in the testing part of present fold """
+    Y_pred = np.array(ssvm.predict(X_test))
+    wrong_segments_array = Y_pred != Y_test
+    wrong_segments_crf.append(np.count_nonzero(wrong_segments_array))
+
+    # figure showing the result of classification of segments for
+    # each jacket in the testing part of present fold """
     if plot_labeling:
         for ti, pred in zip(test_index, Y_pred):
             print(ti)
@@ -127,10 +160,25 @@ for train_index, test_index in kf:
                           labels_segments=pred)
 
     """ YOUR LINEAR SVM TRAINING CODE HERE """
+    X_train_svm, X_test_svm, Y_train_svm, Y_test_svm = np.vstack(X_train), np.vstack(X_test), \
+                                                       np.hstack(Y_train), np.hstack(Y_test)
+    svm.fit(X_train_svm, Y_train_svm)
 
     """ LABEL THE TESTING SET AND PRINT RESULTS """
+    svm_score = svm.score(X_test_svm, Y_test_svm)
+    print("Test score with linear SVM: {}".format(svm_score))
+    scores_svm[fold] = svm_score
+    Y_pred_svm = svm.predict(X_test_svm)
+    wrong_segments_array = Y_pred_svm != Y_test_svm
+    wrong_segments_svm.append(np.count_nonzero(wrong_segments_array))
 
-    fold += 1
+    if plot_labeling:
+        for ti, pred in zip(test_index, Y_pred_svm):
+            print(ti)
+            print(pred)
+            s = segments[ti]
+            plot_segments(s, caption='LinearSVM predictions for jacket ' + str(ti + 1),
+                          labels_segments=pred)
 
 """
 Global results
@@ -173,5 +221,19 @@ if plot_coefficients:
 
     """ SHOW IMAGE OF THE LEARNED UNARY COEFFICIENTS, size (num_labels, num_features)"""
     """ use matshow() and colorbar()"""
+    unary_weights = ssvm.w[:num_segments_classes * num_features].reshape(num_segments_classes, num_features)
+    plt.matshow(unary_weights)
+    plt.colorbar()
+    plt.title("Transition parameters of the chain CRF.")
+    plt.xticks(np.arange(num_features))
+    plt.yticks(np.arange(num_segments_classes), name_of_labels)
+    plt.show()
 
     """ SHOW IMAGE OF PAIRWISE COEFFICIENTS size (num_labels, num_labels)"""
+    pairwise_weights = ssvm.w[num_segments_classes * num_features:].reshape(num_segments_classes, num_segments_classes)
+    plt.matshow(pairwise_weights)
+    plt.colorbar()
+    plt.title("Transition parameters of the chain CRF.")
+    plt.xticks(np.arange(num_segments_classes), name_of_labels)
+    plt.yticks(np.arange(num_segments_classes), name_of_labels)
+    plt.show()
