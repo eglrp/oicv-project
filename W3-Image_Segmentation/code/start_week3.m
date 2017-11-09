@@ -17,7 +17,7 @@ dts=(10^-1)./mus;
 iterMax=5000;
 reIni=1500;
 
-plot_iters = 10000;
+plot_iters = 10;
 
 % Length and area parameters
     % circles.png mu=1, mu=2, mu=10
