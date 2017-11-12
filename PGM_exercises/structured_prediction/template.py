@@ -7,6 +7,7 @@ Created on Fri Sep  4 20:15:45 2015
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 
 from pandas import ExcelFile
 
@@ -24,17 +25,33 @@ structured_learning_options = {
     'nslack': NSlackSSVM,
     'frankwolfe': FrankWolfeSSVM,
 }
+num_segments_per_jacket = 40
+num_segments_classes = 12
+feature_sets_options = {'basic', 'basic_and_middle', 'full'}
+features_names = [
+    'x0_norm',
+    'y0_norm',
+    'x1_norm',
+    'y1_norm',
+    'angle',
+    'x_norm_middle',
+    'y_norm_middle',
+    'x0',
+    'y0',
+    'x1',
+    'y1',
+    'distance',
+]
 
 """ PARAMETERS """
 C = 100
-num_segments_per_jacket = 40
-num_segments_classes = 12
 add_gaussian_noise_to_features = False
 sigma_noise = 0.1
 plot_example = False
 plot_labeling = False
 plot_coefficients = True
 structured_learning_algorithm = 'frankwolfe'  # One of: 'oneslack', 'nslack', 'frankwolfe'
+feature_set = 'basic'  # One of: 'basic', 'basic_and_middle' and 'full'
 
 """ 
 Load the segments and the groundtruth for all jackets
@@ -74,22 +91,31 @@ num_jackets = labels_segments.shape[0]
 num_labels = np.unique(np.ravel(labels_segments)).size
 
 """ CHANGE THIS IF YOU CHANGE NUMBER OF FEATURES """
-num_features = 5
+if feature_set == 'basic':
+    num_features = 5
+elif feature_set == 'basic_and_middle':
+    num_features = 7
+elif feature_set == 'full':
+    num_features = 12
+else:
+    raise ValueError(
+        "Feature set option {!r} not available. Choose one of: 'basic', 'basic_and_middle', 'full'".format(feature_set)
+    )
 X = np.zeros((num_jackets, num_segments_per_jacket, num_features))
 
 for jacket_segments, i in zip(segments, range(num_jackets)):
     for s, j in zip(jacket_segments, range(num_segments_per_jacket)):
         """ set the features """
-        X[i, j, 0:num_features] = \
-            s.x0norm, s.y0norm, s.x1norm, s.y1norm, s.angle
-            # s.x0, s.y0, s.x1, s.y1, \
-            # s.x0norm, s.y0norm, s.x1norm, s.y1norm, \
-            # (s.x0norm + s.x1norm) / 2., (s.y0norm + s.y1norm) / 2., \
-            # np.sqrt((s.x0norm - s.x1norm) ** 2 + (s.y0norm - s.y1norm) ** 2), \
-            # s.angle
-        # s.x0norm, s.y0norm, s.x1norm, s.y1norm, \
-        # (s.x0norm + s.x1norm) / 2., (s.y0norm + s.y1norm) / 2., \
-        # s.angle / (2 * np.pi)
+        if feature_set == 'basic':
+            features = s.x0norm, s.y0norm, s.x1norm, s.y1norm, s.angle
+        elif feature_set == 'basic_and_middle':
+            features = s.x0norm, s.y0norm, s.x1norm, s.y1norm, s.angle / (2 * np.pi), \
+                       (s.x0norm + s.x1norm) / 2., (s.y0norm + s.y1norm) / 2.
+        elif feature_set == 'full':
+            features = s.x0norm, s.y0norm, s.x1norm, s.y1norm, s.angle, \
+                       (s.x0norm + s.x1norm) / 2., (s.y0norm + s.y1norm) / 2., \
+                       s.x0, s.y0, s.x1, s.y1, np.sqrt((s.x0norm - s.x1norm) ** 2 + (s.y0norm - s.y1norm) ** 2)
+        X[i, j, 0:num_features] = features
 
 print('X, Y done')
 
@@ -123,6 +149,8 @@ n_folds = 5
 with 23 we have leave one out : 22 for training, 1 for testing"""
 scores_crf = np.zeros(n_folds)
 scores_svm = np.zeros(n_folds)
+training_time_crf = np.zeros(n_folds)
+training_time_svm = np.zeros(n_folds)
 wrong_segments_crf = []
 wrong_segments_svm = []
 
@@ -138,7 +166,11 @@ for fold, (train_index, test_index) in enumerate(kf):
     Y_test = Y[test_index]
 
     """ YOUR S-SVM TRAINING CODE HERE """
+    start = time.time()
     ssvm.fit(X_train, Y_train)
+    end = time.time()
+    print('CRF training time: {:.2f} s'.format(end - start))
+    training_time_crf[fold] = end - start
 
     """ LABEL THE TESTING SET AND PRINT RESULTS """
     crf_score = ssvm.score(X_test, Y_test)
@@ -162,7 +194,11 @@ for fold, (train_index, test_index) in enumerate(kf):
     """ YOUR LINEAR SVM TRAINING CODE HERE """
     X_train_svm, X_test_svm, Y_train_svm, Y_test_svm = np.vstack(X_train), np.vstack(X_test), \
                                                        np.hstack(Y_train), np.hstack(Y_test)
+    start = time.time()
     svm.fit(X_train_svm, Y_train_svm)
+    end = time.time()
+    print('LinearSVM training time: {:.2f} s'.format(end - start))
+    training_time_svm[fold] = end - start
 
     """ LABEL THE TESTING SET AND PRINT RESULTS """
     svm_score = svm.score(X_test_svm, Y_test_svm)
@@ -191,6 +227,8 @@ print('Scores CRF : {}'.format(scores_crf))
 print('Scores SVM : {}'.format(scores_svm))
 print('Wrongs CRF : {}'.format(wrong_segments_crf))
 print('Wrongs SVM : {}'.format(wrong_segments_svm))
+print('Training time CRF (s): {}'.format(training_time_crf))
+print('Training time SVM (s): {}'.format(training_time_svm))
 print(' ')
 print('Final score CRF: {}, {} wrong labels in total out of {}'.format(
     1.0 - wrong_segments_crf.sum() / float(total_segments),
@@ -202,6 +240,8 @@ print('Final score SVM: {}, {} wrong labels in total out of {}'.format(
     wrong_segments_svm.sum(),
     total_segments)
 )
+print('Average training time CRF: {:.3f} s'.format(np.mean(training_time_crf)))
+print('Average training time SVM: {:.3f} s'.format(np.mean(training_time_svm)))
 
 if plot_coefficients:
     name_of_labels = [
@@ -225,7 +265,7 @@ if plot_coefficients:
     plt.matshow(unary_weights)
     plt.colorbar()
     plt.title("Transition parameters of the chain CRF.")
-    plt.xticks(np.arange(num_features))
+    plt.xticks(np.arange(num_features), features_names[:num_features])
     plt.yticks(np.arange(num_segments_classes), name_of_labels)
     plt.show()
 
