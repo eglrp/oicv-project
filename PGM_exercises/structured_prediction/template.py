@@ -50,7 +50,7 @@ sigma_noise = 0.1
 plot_example = False
 plot_labeling = False
 plot_coefficients = True
-structured_learning_algorithm = 'frankwolfe'  # One of: 'oneslack', 'nslack', 'frankwolfe'
+structured_learning_algorithm = 'nslack'  # One of: 'oneslack', 'nslack', 'frankwolfe'
 feature_set = 'basic'  # One of: 'basic', 'basic_and_middle' and 'full'
 
 """ 
@@ -89,191 +89,201 @@ for all jackets,
 Y = labels_segments
 num_jackets = labels_segments.shape[0]
 num_labels = np.unique(np.ravel(labels_segments)).size
-
-""" CHANGE THIS IF YOU CHANGE NUMBER OF FEATURES """
-if feature_set == 'basic':
-    num_features = 5
-elif feature_set == 'basic_and_middle':
-    num_features = 7
-elif feature_set == 'full':
-    num_features = 12
-else:
-    raise ValueError(
-        "Feature set option {!r} not available. Choose one of: 'basic', 'basic_and_middle', 'full'".format(feature_set)
-    )
-X = np.zeros((num_jackets, num_segments_per_jacket, num_features))
-
-for jacket_segments, i in zip(segments, range(num_jackets)):
-    for s, j in zip(jacket_segments, range(num_segments_per_jacket)):
-        """ set the features """
+for feature_set in feature_sets_options:
+    for C in range(10,200, 10):
+        """ CHANGE THIS IF YOU CHANGE NUMBER OF FEATURES """
+        print('-----------------------------------------\n')
+        print('Feature_set: '+feature_set+'\n')
+        print('C: '+str(C)+'\n')
+        print('-----------------------------------------')
         if feature_set == 'basic':
-            features = s.x0norm, s.y0norm, s.x1norm, s.y1norm, s.angle
+            num_features = 5
         elif feature_set == 'basic_and_middle':
-            features = s.x0norm, s.y0norm, s.x1norm, s.y1norm, s.angle / (2 * np.pi), \
-                       (s.x0norm + s.x1norm) / 2., (s.y0norm + s.y1norm) / 2.
+            num_features = 7
         elif feature_set == 'full':
-            features = s.x0norm, s.y0norm, s.x1norm, s.y1norm, s.angle, \
-                       (s.x0norm + s.x1norm) / 2., (s.y0norm + s.y1norm) / 2., \
-                       s.x0, s.y0, s.x1, s.y1, np.sqrt((s.x0norm - s.x1norm) ** 2 + (s.y0norm - s.y1norm) ** 2)
-        X[i, j, 0:num_features] = features
+            num_features = 12
+        else:
+            raise ValueError(
+                "Feature set option {!r} not available. Choose one of: 'basic', 'basic_and_middle', 'full'".format(feature_set)
+            )
+        X = np.zeros((num_jackets, num_segments_per_jacket, num_features))
 
-print('X, Y done')
+        for jacket_segments, i in zip(segments, range(num_jackets)):
+            for s, j in zip(jacket_segments, range(num_segments_per_jacket)):
+                """ set the features """
+                if feature_set == 'basic':
+                    features = s.x0norm, s.y0norm, s.x1norm, s.y1norm, s.angle
+                elif feature_set == 'basic_and_middle':
+                    features = s.x0norm, s.y0norm, s.x1norm, s.y1norm, s.angle / (2 * np.pi), \
+                               (s.x0norm + s.x1norm) / 2., (s.y0norm + s.y1norm) / 2.
+                elif feature_set == 'full':
+                    features = s.x0norm, s.y0norm, s.x1norm, s.y1norm, s.angle, \
+                               (s.x0norm + s.x1norm) / 2., (s.y0norm + s.y1norm) / 2., \
+                               s.x0, s.y0, s.x1, s.y1, np.sqrt((s.x0norm - s.x1norm) ** 2 + (s.y0norm - s.y1norm) ** 2)
+                X[i, j, 0:num_features] = features
 
-""" you can add some noise to the features """
-if add_gaussian_noise_to_features:
-    print('Noise sigma {}'.format(sigma_noise))
-    X = X + np.random.normal(0.0, sigma_noise, size=X.size).reshape(np.shape(X))
+        print('X, Y done')
 
-"""
-DEFINE HERE YOUR GRAPHICAL MODEL AND CHOOSE ONE LEARNING METHOD
-(OneSlackSSVM, NSlackSSVM, FrankWolfeSSVM)
-"""
-model = ChainCRF()
-try:
-    ssvm_class = structured_learning_options[structured_learning_algorithm]
-except KeyError:
-    raise Exception('{!r} structured learning model not supported. Use one of: {!r}'.format(
-        structured_learning_algorithm,
-        structured_learning_options.keys(),
-    ))
-ssvm = ssvm_class(model=model, C=C)
+        """ you can add some noise to the features """
+        if add_gaussian_noise_to_features:
+            print('Noise sigma {}'.format(sigma_noise))
+            X = X + np.random.normal(0.0, sigma_noise, size=X.size).reshape(np.shape(X))
 
-""" LINEAR SVM """
-svm = LinearSVC(C=C)
+        """
+        DEFINE HERE YOUR GRAPHICAL MODEL AND CHOOSE ONE LEARNING METHOD
+        (OneSlackSSVM, NSlackSSVM, FrankWolfeSSVM)
+        """
 
-""" 
-Compare SVM with S-SVM doing k-fold cross validation, k=5, see scikit-learn.org 
-"""
-n_folds = 5
-""" with 5 in each fold we have 4 jackets for testing, 19 for training, 
-with 23 we have leave one out : 22 for training, 1 for testing"""
-scores_crf = np.zeros(n_folds)
-scores_svm = np.zeros(n_folds)
-training_time_crf = np.zeros(n_folds)
-training_time_svm = np.zeros(n_folds)
-wrong_segments_crf = []
-wrong_segments_svm = []
+        model = ChainCRF()
+        try:
+            ssvm_class = structured_learning_options[structured_learning_algorithm]
+        except KeyError:
+            raise Exception('{!r} structured learning model not supported. Use one of: {!r}'.format(
+                structured_learning_algorithm,
+                structured_learning_options.keys(),
+            ))
+        ssvm = ssvm_class(model=model, C=C)
 
-kf = KFold(num_jackets, n_folds=n_folds)
-for fold, (train_index, test_index) in enumerate(kf):
-    print(' ')
-    print('train index {}'.format(train_index))
-    print('test index {}'.format(test_index))
-    print('{} jackets for training, {} for testing'.format(len(train_index), len(test_index)))
-    X_train = X[train_index]
-    Y_train = Y[train_index]
-    X_test = X[test_index]
-    Y_test = Y[test_index]
+        """ LINEAR SVM """
+        svm = LinearSVC(C=C)
 
-    """ YOUR S-SVM TRAINING CODE HERE """
-    start = time.time()
-    ssvm.fit(X_train, Y_train)
-    end = time.time()
-    print('CRF training time: {:.2f} s'.format(end - start))
-    training_time_crf[fold] = end - start
+        """
+        Compare SVM with S-SVM doing k-fold cross validation, k=5, see scikit-learn.org
+        """
+        n_folds = 5
+        """ with 5 in each fold we have 4 jackets for testing, 19 for training,
+        with 23 we have leave one out : 22 for training, 1 for testing"""
+        scores_crf = np.zeros(n_folds)
+        scores_svm = np.zeros(n_folds)
+        training_time_crf = np.zeros(n_folds)
+        training_time_svm = np.zeros(n_folds)
+        wrong_segments_crf = []
+        wrong_segments_svm = []
 
-    """ LABEL THE TESTING SET AND PRINT RESULTS """
-    crf_score = ssvm.score(X_test, Y_test)
-    print("Test score with chain CRF: {}".format(crf_score))
-    scores_crf[fold] = crf_score
+        kf = KFold(num_jackets, n_folds=n_folds)
+        for fold, (train_index, test_index) in enumerate(kf):
+            print(' ')
+            print('train index {}'.format(train_index))
+            print('test index {}'.format(test_index))
+            print('{} jackets for training, {} for testing'.format(len(train_index), len(test_index)))
+            X_train = X[train_index]
+            Y_train = Y[train_index]
+            X_test = X[test_index]
+            Y_test = Y[test_index]
 
-    Y_pred = np.array(ssvm.predict(X_test))
-    wrong_segments_array = Y_pred != Y_test
-    wrong_segments_crf.append(np.count_nonzero(wrong_segments_array))
+            """ YOUR S-SVM TRAINING CODE HERE """
+            start = time.time()
+            ssvm.fit(X_train, Y_train)
+            end = time.time()
+            print('CRF training time: {:.2f} s'.format(end - start))
+            training_time_crf[fold] = end - start
 
-    # figure showing the result of classification of segments for
-    # each jacket in the testing part of present fold """
-    if plot_labeling:
-        for ti, pred in zip(test_index, Y_pred):
-            print(ti)
-            print(pred)
-            s = segments[ti]
-            plot_segments(s, caption='SSVM predictions for jacket ' + str(ti + 1),
-                          labels_segments=pred)
+            """ LABEL THE TESTING SET AND PRINT RESULTS """
+            crf_score = ssvm.score(X_test, Y_test)
+            print("Test score with chain CRF: {}".format(crf_score))
+            scores_crf[fold] = crf_score
 
-    """ YOUR LINEAR SVM TRAINING CODE HERE """
-    X_train_svm, X_test_svm, Y_train_svm, Y_test_svm = np.vstack(X_train), np.vstack(X_test), \
-                                                       np.hstack(Y_train), np.hstack(Y_test)
-    start = time.time()
-    svm.fit(X_train_svm, Y_train_svm)
-    end = time.time()
-    print('LinearSVM training time: {:.2f} s'.format(end - start))
-    training_time_svm[fold] = end - start
+            Y_pred = np.array(ssvm.predict(X_test))
+            wrong_segments_array = Y_pred != Y_test
+            wrong_segments_crf.append(np.count_nonzero(wrong_segments_array))
 
-    """ LABEL THE TESTING SET AND PRINT RESULTS """
-    svm_score = svm.score(X_test_svm, Y_test_svm)
-    print("Test score with linear SVM: {}".format(svm_score))
-    scores_svm[fold] = svm_score
-    Y_pred_svm = svm.predict(X_test_svm)
-    wrong_segments_array = Y_pred_svm != Y_test_svm
-    wrong_segments_svm.append(np.count_nonzero(wrong_segments_array))
+            # figure showing the result of classification of segments for
+            # each jacket in the testing part of present fold """
+            if plot_labeling:
+                for ti, pred in zip(test_index, Y_pred):
+                    print(ti)
+                    print(pred)
+                    s = segments[ti]
+                    plot_segments(s, caption='SSVM predictions for jacket ' + str(ti + 1),
+                                  labels_segments=pred)
 
-    if plot_labeling:
-        for ti, pred in zip(test_index, Y_pred_svm):
-            print(ti)
-            print(pred)
-            s = segments[ti]
-            plot_segments(s, caption='LinearSVM predictions for jacket ' + str(ti + 1),
-                          labels_segments=pred)
+            """ YOUR LINEAR SVM TRAINING CODE HERE """
+            X_train_svm, X_test_svm, Y_train_svm, Y_test_svm = np.vstack(X_train), np.vstack(X_test), \
+                                                               np.hstack(Y_train), np.hstack(Y_test)
+            start = time.time()
+            svm.fit(X_train_svm, Y_train_svm)
+            end = time.time()
+            print('LinearSVM training time: {:.2f} s'.format(end - start))
+            training_time_svm[fold] = end - start
 
-"""
-Global results
-"""
-total_segments = num_jackets * num_segments_per_jacket
-wrong_segments_crf = np.array(wrong_segments_crf)
-wrong_segments_svm = np.array(wrong_segments_svm)
-print('Results per fold ')
-print('Scores CRF : {}'.format(scores_crf))
-print('Scores SVM : {}'.format(scores_svm))
-print('Wrongs CRF : {}'.format(wrong_segments_crf))
-print('Wrongs SVM : {}'.format(wrong_segments_svm))
-print('Training time CRF (s): {}'.format(training_time_crf))
-print('Training time SVM (s): {}'.format(training_time_svm))
-print(' ')
-print('Final score CRF: {}, {} wrong labels in total out of {}'.format(
-    1.0 - wrong_segments_crf.sum() / float(total_segments),
-    wrong_segments_crf.sum(),
-    total_segments
-))
-print('Final score SVM: {}, {} wrong labels in total out of {}'.format(
-    1.0 - wrong_segments_svm.sum() / float(total_segments),
-    wrong_segments_svm.sum(),
-    total_segments)
-)
-print('Average training time CRF: {:.3f} s'.format(np.mean(training_time_crf)))
-print('Average training time SVM: {:.3f} s'.format(np.mean(training_time_svm)))
+            """ LABEL THE TESTING SET AND PRINT RESULTS """
+            svm_score = svm.score(X_test_svm, Y_test_svm)
+            print("Test score with linear SVM: {}".format(svm_score))
+            scores_svm[fold] = svm_score
+            Y_pred_svm = svm.predict(X_test_svm)
+            wrong_segments_array = Y_pred_svm != Y_test_svm
+            wrong_segments_svm.append(np.count_nonzero(wrong_segments_array))
 
-if plot_coefficients:
-    name_of_labels = [
-        'neck',
-        'left shoulder',
-        'outer left sleeve',
-        'left wrist',
-        'inner left sleeve',
-        'left chest',
-        'waist',
-        'right chest',
-        'inner right sleeve',
-        'right wrist',
-        'outer right sleeve',
-        'right shoulder',
-    ]
+            if plot_labeling:
+                for ti, pred in zip(test_index, Y_pred_svm):
+                    print(ti)
+                    print(pred)
+                    s = segments[ti]
+                    plot_segments(s, caption='LinearSVM predictions for jacket ' + str(ti + 1),
+                                  labels_segments=pred)
 
-    """ SHOW IMAGE OF THE LEARNED UNARY COEFFICIENTS, size (num_labels, num_features)"""
-    """ use matshow() and colorbar()"""
-    unary_weights = ssvm.w[:num_segments_classes * num_features].reshape(num_segments_classes, num_features)
-    plt.matshow(unary_weights)
-    plt.colorbar()
-    plt.title("Transition parameters of the chain CRF.")
-    plt.xticks(np.arange(num_features), features_names[:num_features])
-    plt.yticks(np.arange(num_segments_classes), name_of_labels)
-    plt.show()
+        """
+        Global results
+        """
+        total_segments = num_jackets * num_segments_per_jacket
+        wrong_segments_crf = np.array(wrong_segments_crf)
+        wrong_segments_svm = np.array(wrong_segments_svm)
+        print('Results per fold ')
+        print('Scores CRF : {}'.format(scores_crf))
+        print('Scores SVM : {}'.format(scores_svm))
+        print('Wrongs CRF : {}'.format(wrong_segments_crf))
+        print('Wrongs SVM : {}'.format(wrong_segments_svm))
+        print('Training time CRF (s): {}'.format(training_time_crf))
+        print('Training time SVM (s): {}'.format(training_time_svm))
+        print(' ')
+        print('Final score CRF: {}, {} wrong labels in total out of {}'.format(
+            1.0 - wrong_segments_crf.sum() / float(total_segments),
+            wrong_segments_crf.sum(),
+            total_segments
+        ))
+        print('Final score SVM: {}, {} wrong labels in total out of {}'.format(
+            1.0 - wrong_segments_svm.sum() / float(total_segments),
+            wrong_segments_svm.sum(),
+            total_segments)
+        )
+        print('Average training time CRF: {:.3f} s'.format(np.mean(training_time_crf)))
+        print('Average training time SVM: {:.3f} s'.format(np.mean(training_time_svm)))
 
-    """ SHOW IMAGE OF PAIRWISE COEFFICIENTS size (num_labels, num_labels)"""
-    pairwise_weights = ssvm.w[num_segments_classes * num_features:].reshape(num_segments_classes, num_segments_classes)
-    plt.matshow(pairwise_weights)
-    plt.colorbar()
-    plt.title("Transition parameters of the chain CRF.")
-    plt.xticks(np.arange(num_segments_classes), name_of_labels)
-    plt.yticks(np.arange(num_segments_classes), name_of_labels)
-    plt.show()
+        if plot_coefficients:
+            name_of_labels = [
+                'neck',
+                'left shoulder',
+                'outer left sleeve',
+                'left wrist',
+                'inner left sleeve',
+                'left chest',
+                'waist',
+                'right chest',
+                'inner right sleeve',
+                'right wrist',
+                'outer right sleeve',
+                'right shoulder',
+            ]
+
+            """ SHOW IMAGE OF THE LEARNED UNARY COEFFICIENTS, size (num_labels, num_features)"""
+            """ use matshow() and colorbar()"""
+            unary_weights = ssvm.w[:num_segments_classes * num_features].reshape(num_segments_classes, num_features)
+            plt.matshow(unary_weights)
+            plt.colorbar()
+            plt.title("Transition parameters of the chain CRF.")
+            plt.xticks(np.arange(num_features), features_names[:num_features])
+            plt.yticks(np.arange(num_segments_classes), name_of_labels)
+
+            plt.savefig(str(C)+'_'+feature_set+'_unary_coefficient.png')
+
+
+            """ SHOW IMAGE OF PAIRWISE COEFFICIENTS size (num_labels, num_labels)"""
+            pairwise_weights = ssvm.w[num_segments_classes * num_features:].reshape(num_segments_classes, num_segments_classes)
+            plt.matshow(pairwise_weights)
+            plt.colorbar()
+            plt.title("Transition parameters of the chain CRF.")
+            plt.xticks(np.arange(num_segments_classes), name_of_labels)
+            plt.yticks(np.arange(num_segments_classes), name_of_labels)
+            #fig = plt.figure()
+            plt.savefig(str(C)+'_'+feature_set+'_pairwise_coefficient.png')
+            #plt.close(fig)
