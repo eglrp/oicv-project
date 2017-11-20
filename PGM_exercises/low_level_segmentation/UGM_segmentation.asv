@@ -17,11 +17,11 @@ im_names = {'7_9_s.bmp'};
 % K=20; % Number of color clusters (=number of states of hidden variables)
 
 %Pair-wise parameters
+
 smooth_term=[0.0 10]; % Potts Model
 
 
 smooth = [2, 5, 10];
-ii=-2;
 for pos = 1:length(smooth)
     ii = ii+1;
     smooth_term(2) = smooth(pos);
