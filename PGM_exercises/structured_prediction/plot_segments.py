@@ -4,12 +4,14 @@ Created on Mon Oct 30 23:19:37 2017
 
 @author: joans
 """
+import os
+
 import matplotlib.pyplot as plt
 
 
-def plot_segments(segments, caption='', labels_segments=None):
+def plot_segments(segments, caption='', labels_segments=None,
+                  savepath=os.path.abspath('predictions/predicted_segment.png')):
     colors = 'rgbcmyk' * 2
-    fig = plt.figure()
     num_segments = len(segments)
     for s, n in zip(segments, range(num_segments)):
         if labels_segments is None:
@@ -23,6 +25,5 @@ def plot_segments(segments, caption='', labels_segments=None):
     plt.axis('equal')
     plt.gca().invert_yaxis()
     plt.title(caption)
-    plt.show(block=False)
-
-    return fig
+    plt.savefig(savepath)
+    plt.close()

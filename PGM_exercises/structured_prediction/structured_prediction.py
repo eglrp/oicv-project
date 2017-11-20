@@ -9,7 +9,6 @@ from __future__ import print_function
 import os
 
 import errno
-import matplotlib.pyplot as plt
 import numpy as np
 import time
 
@@ -17,13 +16,18 @@ import time
 import logging
 from pandas import ExcelFile
 
-from pystruct.models import ChainCRF
-from pystruct.learners import OneSlackSSVM, NSlackSSVM, FrankWolfeSSVM
-from sklearn.cross_validation import KFold
-from sklearn.model_selection import ParameterSampler
-from sklearn.svm import LinearSVC
+import matplotlib
+matplotlib.use('Agg')
 
-from plot_segments import plot_segments
+from pystruct.models import ChainCRF  # noqa
+from pystruct.learners import OneSlackSSVM, NSlackSSVM, FrankWolfeSSVM  # noqa
+from sklearn.cross_validation import KFold  # noqa
+from sklearn.model_selection import ParameterSampler  # noqa
+from sklearn.svm import LinearSVC  # noqa
+
+from plot_segments import plot_segments  # noqa
+
+import matplotlib.pyplot as plt  # noqa
 
 """ CONSTANTS """
 
@@ -169,25 +173,30 @@ def report_global_results(num_jackets, scores_crf, scores_svm, training_time_crf
     logger.info('Training time CRF (s): {}'.format(training_time_crf))
     logger.info('Training time SVM (s): {}'.format(training_time_svm))
     logger.info(' ')
+    final_score_crf = 1.0 - wrong_segments_crf.sum() / float(total_segments)
     logger.info('Final score CRF: {}, {} wrong labels in total out of {}'.format(
-        1.0 - wrong_segments_crf.sum() / float(total_segments),
+        final_score_crf,
         wrong_segments_crf.sum(),
         total_segments
     ))
+    final_score_svm = 1.0 - wrong_segments_svm.sum() / float(total_segments)
     logger.info('Final score SVM: {}, {} wrong labels in total out of {}'.format(
-        1.0 - wrong_segments_svm.sum() / float(total_segments),
+        final_score_svm,
         wrong_segments_svm.sum(),
         total_segments)
     )
     logger.info('Average training time CRF: {:.3f} s'.format(np.mean(training_time_crf)))
     logger.info('Average training time SVM: {:.3f} s'.format(np.mean(training_time_svm)))
 
+    return final_score_crf, final_score_svm
+
 
 def plot_unary_weights(C, feature_set, num_features, ssvm, save_path):
     unary_weights = ssvm.w[:num_segments_classes * num_features].reshape(num_segments_classes, num_features)
-    plt.matshow(unary_weights)
+    plt.figure(figsize=(10, 10))
+    plt.imshow(unary_weights)
     plt.colorbar()
-    plt.title("Transition parameters of the chain CRF.", loc='left')
+    plt.title("Transition parameters of the chain CRF.")
     plt.xticks(np.arange(num_features), features_names[:num_features], rotation=45)
     plt.yticks(np.arange(num_segments_classes), name_of_labels)
     result_name = '{C:.2f}_{feature_set}_unarry_coefficient.png'.format(C=C, feature_set=feature_set)
@@ -199,9 +208,10 @@ def plot_pairwise_weights(C, feature_set, num_features, ssvm, save_path):
     pairwise_weights = ssvm.w[num_segments_classes * num_features:].reshape(
         num_segments_classes, num_segments_classes
     )
-    plt.matshow(pairwise_weights)
+    plt.figure(figsize=(12, 10))
+    plt.imshow(pairwise_weights)
     plt.colorbar()
-    plt.title("Transition parameters of the chain CRF.", loc='left')
+    plt.title("Transition parameters of the chain CRF.")
     plt.xticks(np.arange(num_segments_classes), name_of_labels, rotation=45)
     plt.yticks(np.arange(num_segments_classes), name_of_labels)
     result_name = '{C:.2f}_{feature_set}_pairwise_coefficient.png'.format(C=C, feature_set=feature_set)
@@ -214,11 +224,11 @@ def main():
 
     """ PARAMETERS """
 
-    random_search_hyperparams = True
+    random_search_hyperparams = False
     random_search_iters = 100
 
-    C = 100
-    feature_set_name = 'basic'  # One of: 'basic', 'basic_and_middle' and 'full'
+    C = 1
+    feature_set_name = 'basic_and_middle'  # One of: 'basic', 'basic_and_middle' and 'full'
 
     add_gaussian_noise_to_features = False
     sigma_noise = 0.1
@@ -235,7 +245,9 @@ def main():
     """ MAIN """
 
     save_path = os.path.abspath('results')
+    predictions_path = os.path.abspath('predictions')
     create_dirs(save_path)
+    create_dirs(predictions_path)
 
     setup_logging(os.path.join(save_path, 'structured_prediction.log'))
     logger = logging.getLogger('structured_prediction.main')
@@ -263,6 +275,8 @@ def main():
         # Fixed values
         sample_generator = [{'feature_set_name': feature_set_name, 'C': C}]
 
+    objective_metric = 0
+    best_model_params = dict()
     for d in sample_generator:
 
         feature_set_name = d['feature_set_name']
@@ -331,10 +345,12 @@ def main():
             # each jacket in the testing part of present fold
             if plot_labeling:
                 for ti, pred in zip(test_index, Y_pred):
-                    logger.info(ti)
-                    logger.info(pred)
                     s = segments[ti]
-                    plot_segments(s, caption='SSVM predictions for jacket ' + str(ti + 1), labels_segments=pred)
+                    prediction_filepath = os.path.join(predictions_path, 'crf_jacket_{}-C_{}-features_{}.png'.format(
+                        ti + 1, C, feature_set_name
+                    ))
+                    plot_segments(s, caption='CRF predictions for jacket {}'.format(ti + 1), labels_segments=pred,
+                                  savepath=prediction_filepath)
 
             # YOUR LINEAR SVM TRAINING CODE HERE """
             X_train_svm, X_test_svm, Y_train_svm, Y_test_svm = np.vstack(X_train), np.vstack(X_test), \
@@ -352,25 +368,35 @@ def main():
 
             # figure showing the result of classification of segments for
             # each jacket in the testing part of present fold
+            Y_pred_svm = np.reshape(Y_pred_svm, (-1, num_segments_per_jacket))
             if plot_labeling:
                 for ti, pred in zip(test_index, Y_pred_svm):
-                    logger.info(ti)
-                    logger.info(pred)
                     s = segments[ti]
-                    plot_segments(s, caption='LinearSVM predictions for jacket ' + str(ti + 1),
-                                  labels_segments=pred)
+                    prediction_filepath = os.path.join(predictions_path, 'svm_jacket_{}-C_{}-features_{}.png'.format(
+                        ti + 1, C, feature_set_name
+                    ))
+                    plot_segments(s, caption='LinearSVM predictions for jacket {}'.format(ti + 1), labels_segments=pred,
+                                  savepath=prediction_filepath)
 
         # Global results
-        report_global_results(
+        final_score_crf, _ = report_global_results(
             num_jackets, scores_crf, scores_svm, training_time_crf, training_time_svm,
             wrong_segments_crf, wrong_segments_svm
         )
+
+        if final_score_crf > objective_metric:
+            objective_metric = final_score_crf
+            best_model_params = d
 
         if plot_coefficients:
             plot_unary_weights(C, feature_set_name, num_features, ssvm, save_path)
             plot_pairwise_weights(C, feature_set_name, num_features, ssvm, save_path)
 
         logger.info("End of sample parameters")
+
+    if random_search_hyperparams:
+        logger.info('Best model objective metric: {!r}'.format(objective_metric))
+        logger.info('Best model parameters: {!r}'.format(best_model_params))
 
 
 if __name__ == '__main__':
