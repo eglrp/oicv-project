@@ -225,9 +225,9 @@ def main():
     """ PARAMETERS """
 
     random_search_hyperparams = False
-    random_search_iters = 500
+    random_search_iters = 100
 
-    C = 79.23168
+    C = 89.3
     feature_set_name = 'basic_and_middle'  # One of: 'basic', 'basic_and_middle' and 'full'
 
     add_gaussian_noise_to_features = False
@@ -235,8 +235,8 @@ def main():
 
     plot_example = False
     plot_example_number = 4
-    plot_labeling = False
-    plot_coefficients = False
+    plot_labeling = True
+    plot_coefficients = True
 
     structured_learning_algorithm = 'nslack'  # One of: 'oneslack', 'nslack', 'frankwolfe'
 
@@ -268,7 +268,7 @@ def main():
         # Random search
         random_search_space = {
             'feature_set_name': list(feature_sets_options),
-            'C': np.logspace(-1, 3, 1000)
+            'C': np.logspace(0, 2.7, 1000000)
         }
         sample_generator = ParameterSampler(param_distributions=random_search_space, n_iter=random_search_iters)
     else:
