@@ -2,15 +2,12 @@ clear all;
 close all;
 clc;
 
-im_name='7_9_s.bmp';
-
 % TODO: Update library path
 % Add  library paths
 % basedir='~/Desenvolupament/UGM/';
 % addpath(basedir);
 
-%im_names = {'7_9_s.bmp', '2_1_s.bmp', '3_12_s.bmp'};
-im_names = {'7_9_s.bmp'};
+im_names = {'7_9_s.bmp', '2_1_s.bmp', '3_12_s.bmp'};
 
 %Set model parameters
 %cluster color
@@ -65,44 +62,44 @@ for pos = 1:length(smooth)
             if ~isempty(edgePot)
 
                 % color clustering
-                [~,c] = min(reshape(data_term,[NumFils*NumCols K]),[],2);
-                im_c= reshape(mu_color(c,:),size(im));
+                 [~,c] = max(reshape(data_term,[NumFils*NumCols K]),[],2);
+                 im_c= reshape(mu_color(c,:),size(im));
 
             %     Call different UGM inference algorithms
-                display('Loopy Belief Propagation'); tic;
-                [nodeBelLBP,edgeBelLBP,logZLBP] = UGM_Infer_LBP(nodePot,edgePot,edgeStruct);toc;
-                [ value_max , index_max] = (max(nodeBelLBP, [], 2));
-                im_lbp = reshape(mu_color(index_max,:), size(im));
+%                 display('Loopy Belief Propagation'); tic;
+%                 [nodeBelLBP,edgeBelLBP,logZLBP] = UGM_Infer_LBP(nodePot,edgePot,edgeStruct);toc;
+%                 [ value_max , index_max] = (max(nodeBelLBP, [], 2));
+%                 im_lbp = reshape(mu_color(index_max,:), size(im));
 
                 % Max-sum
-                display('Max-sum'); tic;
+                display('Loopy Belief Propagation'); tic;
                 decodeLBP = UGM_Decode_LBP(nodePot,edgePot,edgeStruct);
-                im_bp= reshape(mu_color(decodeLBP,:),size(im));
+                im_lbp= reshape(mu_color(decodeLBP,:),size(im));
                 toc;
 
 
                 % TODO: apply other inference algorithms and compare their performance
                 %
                 % - Graph Cut
-            %     display('Graph cut'); tic;
-            %     decodeGcut = UGM_Decode_GraphCut(nodePot,edgePot,edgeStruct);
-            %     im_gcut = reshape(mu_color(decodeGcut,:), size(im));
-            %     toc;
+%                  display('Graph cut'); tic;
+%                  decodeGcut = UGM_Decode_GraphCut(nodePot,edgePot,edgeStruct);
+%                  im_gcut = reshape(mu_color(decodeGcut,:), size(im));
+%                  toc;
 
                 % - Linear Programing Relaxation
-            %     display('Linear Programming'); tic;
-            %     decodeLinProg = UGM_Decode_LinProg(nodePot,edgePot,edgeStruct);
-            %     im_linprog = reshape(mu_color(decodeLinProg, :), size(im));
-            %     toc;
+                 display('Linear Programming'); tic;
+                 decodeICM = UGM_Decode_ICM(nodePot,edgePot,edgeStruct);
+                 im_ICM = reshape(mu_color(decodeICM, :), size(im));
+                 toc;
 
                 figure (ii)
                 subplot(2,2,1),imshow(Lab2RGB(im));xlabel('Original');
                 subplot(2,2,2),imshow(Lab2RGB(im_c),[]);xlabel('Clustering without GM');
-                subplot(2,2,3),imshow(Lab2RGB(im_bp),[]);xlabel('Max-Sum');
+                subplot(2,2,3),imshow(Lab2RGB(im_ICM),[]);xlabel('ICM');
                 subplot(2,2,4),imshow(Lab2RGB(im_lbp),[]);xlabel('Loopy Belief Propagation');
                 %subplot(2,2,4),imshow(Lab2RGB(im_linprog),[]);xlabel('Linear Programming');
                 image_name=strrep(im_names{i}, '.bmp', '.png');
-                print(fullfile('Results', sprintf('K_%s_%s_%s',string(K), string(smooth_term(2)), image_name)), '-dpng' );
+                print(fullfile('Results', sprintf('K_%s_%s_ICM_%s',string(K), string(smooth_term(2)),image_name)), '-dpng' );
             else
 
                 error('You have to implement the CreateGridUGMModel.m function');
