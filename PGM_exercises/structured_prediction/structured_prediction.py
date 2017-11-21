@@ -225,9 +225,9 @@ def main():
     """ PARAMETERS """
 
     random_search_hyperparams = False
-    random_search_iters = 100
+    random_search_iters = 500
 
-    C = 1
+    C = 79.23168
     feature_set_name = 'basic_and_middle'  # One of: 'basic', 'basic_and_middle' and 'full'
 
     add_gaussian_noise_to_features = False
@@ -236,7 +236,7 @@ def main():
     plot_example = False
     plot_example_number = 4
     plot_labeling = False
-    plot_coefficients = True
+    plot_coefficients = False
 
     structured_learning_algorithm = 'nslack'  # One of: 'oneslack', 'nslack', 'frankwolfe'
 
@@ -286,6 +286,7 @@ def main():
         logger.info('-----------------------------------------')
         logger.info('Feature Set: {}'.format(feature_set_name))
         logger.info('C: {:.4f}'.format(C))
+        logger.info('Learner: {}'.format(structured_learning_algorithm.upper()))
         logger.info('-----------------------------------------')
 
         X, num_features = select_features_matrix(feature_set_name, num_jackets, segments)
@@ -384,9 +385,11 @@ def main():
             wrong_segments_crf, wrong_segments_svm
         )
 
-        if final_score_crf > objective_metric:
+        if random_search_hyperparams and final_score_crf > objective_metric:
             objective_metric = final_score_crf
             best_model_params = d
+            logger.info('Found best model so far with parameters: {!r}'.format(d))
+            logger.info('Found best model so far with objective score: {!r}'.format(objective_metric))
 
         if plot_coefficients:
             plot_unary_weights(C, feature_set_name, num_features, ssvm, save_path)
